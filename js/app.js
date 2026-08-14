@@ -545,10 +545,7 @@ btnAddUser.textContent='검색';
 userFormTitle.textContent='관리자 추가 (사용자 검색)';
 
 let searchResults=[];
-const searchResultDiv=document.createElement('div');
-searchResultDiv.className='user-list';
-searchResultDiv.id='searchResults';
-userInputId.parentElement.parentElement.appendChild(searchResultDiv);
+const searchResultDiv=$('#searchResults');
 
 btnAddUser.addEventListener('click', async function(){
   const query=userInputId.value.trim();
@@ -594,9 +591,12 @@ btnAddUser.addEventListener('click', async function(){
 
 /* ─── 인증 ─── */
 async function doMsLogin(){
+  const btn = document.getElementById('btnMsLogin');
+  btn.disabled = true; // 중복 클릭 방지
   try{
+    await AUTH.ready; // ★ 초기화 완료 대기
     const account = await AUTH.login();
-    if(!account) return;
+    if(!account) { btn.disabled = false; return; }
     const me = await GRAPH_API.getMe();
     const isAdmin = await GRAPH_API.isOwner(me.id);
     currentUser = {
@@ -615,6 +615,7 @@ async function doMsLogin(){
   }catch(e){
     console.error(e);
     toast('로그인 실패');
+    btn.disabled = false;
   }
 }
 
@@ -670,8 +671,11 @@ document.getElementById('btnMsLogin').addEventListener('click', doMsLogin);
 
 /* ─── 초기화 ─── */
 (async function init(){
+  await AUTH.ready; // ★ MSAL 초기화 완료까지 대기
+
   const account = AUTH.getAccount();
   if(account){
+    // 이미 로그인된 세션 있음 → 자동 로그인
     try{
       const me = await GRAPH_API.getMe();
       const isAdmin = await GRAPH_API.isOwner(me.id);
