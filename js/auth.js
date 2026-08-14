@@ -1,6 +1,5 @@
 // ============================================================
-// 인증 (MSAL v4 + Teams NAA)
-// 자동 로그인 실패 시 상단 로그인 버튼 표시
+// 인증 (MSAL v4 — Redirect 방식)
 // ============================================================
 
 (async function initApp() {
@@ -42,17 +41,20 @@
             auth: {
                 clientId: CONFIG.clientId,
                 authority: 'https://login.microsoftonline.com/' + CONFIG.tenantId,
-                redirectUri: CONFIG.redirectUri
+                redirectUri: CONFIG.redirectUri,
+                navigateToLoginRequestUrl: true
             },
             cache: { cacheLocation: 'localStorage' }
         });
 
         await APP.msalInstance.initialize();
+        console.log('[MSAL] initialize() 완료');
 
-        // 리디렉트 복귀 처리
+        // ★ 핵심: redirect에서 돌아온 경우 토큰 처리
         try {
             var redirectResp = await APP.msalInstance.handleRedirectPromise();
             if (redirectResp && redirectResp.account) {
+                console.log('[MSAL] Redirect 복귀 — 토큰 수신');
                 APP.msalInstance.setActiveAccount(redirectResp.account);
                 APP.accessToken = redirectResp.accessToken || null;
                 if (!APP.accessToken) await getToken();
@@ -67,7 +69,7 @@
         APP.msalReady = true;
     }
 
-    // ─── 3. 자동 로그인 시도 ───
+    // ─── 3. 자동 로그인 시도 (기존 세션) ───
     if (APP.isInTeams) {
         try {
             var tr = await APP.msalInstance.acquireTokenSilent({ scopes: CONFIG.scopes });
@@ -96,13 +98,12 @@
                 showLoginButton();
             }
         } else {
-            // 로그인된 계정 없음 → 로그인 버튼 표시
             showLoginButton();
         }
     }
 })();
 
-// ─── 수동 로그인 ───
+// ─── 수동 로그인 (Redirect 방식) ───
 async function login() {
     if (!APP.msalReady) {
         showStatus('초기화 중... 잠시 후 다시 시도하세요.', 'error');
@@ -124,27 +125,14 @@ async function login() {
                 APP.accessToken = r2.accessToken;
                 APP.msalInstance.setActiveAccount(r2.account);
             }
+            onLoginSuccess();
         } else {
-            try {
-                var popupResp = await APP.msalInstance.loginPopup({ scopes: CONFIG.scopes });
-                APP.msalInstance.setActiveAccount(popupResp.account);
-                if (popupResp.accessToken) {
-                    APP.accessToken = popupResp.accessToken;
-                } else {
-                    await getToken();
-                }
-            } catch (popupErr) {
-                if (popupErr.errorCode === 'user_cancelled') {
-                    btn.disabled = false;
-                    btn.textContent = 'Microsoft로 로그인';
-                    return;
-                }
-                // Popup 실패 → redirect 폴백
-                await APP.msalInstance.loginRedirect({ scopes: CONFIG.scopes });
-                return;
-            }
+            // ★ 브라우저: redirect 방식으로 로그인
+            await APP.msalInstance.loginRedirect({
+                scopes: CONFIG.scopes
+            });
+            // 이 이후 코드는 실행되지 않음 (페이지가 리디렉트됨)
         }
-        onLoginSuccess();
     } catch (e) {
         showStatus('로그인 실패: ' + e.message, 'error');
         btn.disabled = false;
@@ -170,17 +158,8 @@ async function getToken(forceRefresh) {
         });
         APP.accessToken = r.accessToken;
     } catch (e) {
-        if (APP.isInTeams) {
-            var r2 = await APP.msalInstance.acquireTokenPopup({ scopes: CONFIG.scopes });
-            APP.accessToken = r2.accessToken;
-        } else {
-            try {
-                var r3 = await APP.msalInstance.acquireTokenPopup({ scopes: CONFIG.scopes });
-                APP.accessToken = r3.accessToken;
-            } catch (e2) {
-                await APP.msalInstance.acquireTokenRedirect({ scopes: CONFIG.scopes });
-            }
-        }
+        console.warn('[MSAL] Silent 실패, redirect로 토큰 요청');
+        await APP.msalInstance.acquireTokenRedirect({ scopes: CONFIG.scopes });
     }
 }
 
@@ -193,12 +172,8 @@ function logout() {
         resetUI();
         showLoginButton();
     } else {
-        var account = APP.msalInstance.getActiveAccount();
-        APP.msalInstance.logoutPopup({
-            account: account,
+        APP.msalInstance.logoutRedirect({
             postLogoutRedirectUri: CONFIG.redirectUri
-        }).catch(function() {
-            APP.msalInstance.logoutRedirect({ postLogoutRedirectUri: CONFIG.redirectUri });
         });
     }
 }
@@ -215,14 +190,9 @@ async function onLoginSuccess() {
             name: me.displayName || APP.currentUserEmail
         };
 
-        // 역할 확인
         await checkUserRole();
-
-        // UI 전환
         hideLoginButton();
         showLoggedInUI();
-
-        // 데이터 로드
         await loadBookmarks();
     } catch (e) {
         console.error('[Auth] 후처리 실패:', e.message);
@@ -237,11 +207,7 @@ async function checkUserRole() {
         var data = await graphGet(
             CONFIG.graphUrl + '/me/memberOf?$filter=id eq \'' + CONFIG.groupId + '\''
         );
-        if (data.value && data.value.length > 0) {
-            APP.currentUserRole = 'admin';
-        } else {
-            APP.currentUserRole = 'user';
-        }
+        APP.currentUserRole = (data.value && data.value.length > 0) ? 'admin' : 'user';
     } catch (e) {
         console.warn('[권한] 확인 실패:', e.message);
         APP.currentUserRole = 'user';
@@ -250,9 +216,10 @@ async function checkUserRole() {
 
 // ─── UI 헬퍼 ───
 function showLoginButton() {
-    document.getElementById('btnMsLogin').style.display = 'inline-flex';
-    document.getElementById('btnMsLogin').disabled = false;
-    document.getElementById('btnMsLogin').textContent = 'Microsoft로 로그인';
+    var btn = document.getElementById('btnMsLogin');
+    btn.style.display = 'inline-flex';
+    btn.disabled = false;
+    btn.textContent = 'Microsoft로 로그인';
     document.getElementById('welcomeMsg').textContent = '로그인 후 이용할 수 있습니다.';
 }
 
@@ -261,23 +228,19 @@ function hideLoginButton() {
 }
 
 function showLoggedInUI() {
-    // 상단 사용자 이름
     var topName = document.getElementById('topUserName');
     topName.textContent = APP.currentUser.name;
     topName.style.display = 'inline';
 
-    // 사이드바 하단
     document.getElementById('sidebarUser').textContent =
         APP.currentUserRole === 'admin' ? 'admin' : APP.currentUser.name;
     document.getElementById('btnLogout').style.display = 'inline-flex';
 
-    // 관리자 UI
     if (APP.currentUserRole === 'admin') {
         document.getElementById('btnSettings').style.display = 'inline-flex';
         document.getElementById('adminToolbar').style.display = 'flex';
     }
 
-    // 환영 메시지 변경
     document.getElementById('welcomeMsg').textContent = '왼쪽 메뉴에서 사이트를 선택하세요.';
 }
 
