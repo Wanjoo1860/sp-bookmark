@@ -18,10 +18,6 @@ function extractUrl(field) {
     return String(field);
 }
 
-function buildUrlField(url, description) {
-    return { Url: url, Description: description || url };
-}
-
 function isBlocked(url) {
     var h = getHostname(url);
     if (!h) return false;
@@ -400,7 +396,7 @@ async function addBookmark() {
 
     var fields = {
         Title: name,
-        Url: buildUrlField(url, name),
+        Url: url,
         Description: desc,
         Visibility: vis,
         Owner: APP.currentUserEmail,
@@ -485,7 +481,7 @@ async function saveEdit() {
     if (!url.startsWith('http')) url = 'https://' + url;
     if (APP.currentUserRole !== 'admin') vis = undefined; // 일반 사용자는 vis 변경 불가
 
-    var fields = { Title: name, Url: buildUrlField(url, name), Description: desc };
+    var fields = { Title: name, Url: url, Description: desc };
     if (vis) fields.Visibility = vis;
 
     try {
