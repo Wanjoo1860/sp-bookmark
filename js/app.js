@@ -338,29 +338,37 @@ async function removeAdmin(userId, displayName) {
     if (!confirm(displayName + ' 님을 관리자에서 제거하시겠습니까?')) return;
     if (userId === APP.currentUserId) { showStatus('자기 자신은 제거할 수 없습니다.', 'error'); return; }
 
+    // ★ 삭제 전에 이메일 정보를 미리 확보
+    var member = APP.adminMembers.find(function(m) { return m.id === userId; });
+    var ownerEmail = member ? (member.mail || member.userPrincipalName || '') : '';
+
+    // 그룹에서 멤버/소유자 제거
+    try { await graphDelete(CONFIG.graphUrl + '/groups/' + CONFIG.groupId + '/members/' + userId + '/$ref'); } catch(e) {}
+    try { await graphDelete(CONFIG.graphUrl + '/groups/' + CONFIG.groupId + '/owners/' + userId + '/$ref'); } catch(e) {}
+
+    showStatus(displayName + ' 관리자에서 제거 완료', 'success');
+
+    // 북마크 정리 (에러 발생해도 무시)
     try {
-        try { await graphDelete(CONFIG.graphUrl + '/groups/' + CONFIG.groupId + '/members/' + userId + '/$ref'); } catch(e) {}
-        try { await graphDelete(CONFIG.graphUrl + '/groups/' + CONFIG.groupId + '/owners/' + userId + '/$ref'); } catch(e) {}
-
-        showStatus(displayName + ' 관리자에서 제거 완료', 'success');
-
-        // 해당 관리자가 등록한 북마크 삭제 확인
-        await deleteBookmarksByOwner(userId, displayName);
-        loadAdminMembers();
+        await deleteBookmarksByOwner(ownerEmail, displayName);
     } catch (e) {
-        showStatus('관리자 제거 실패: ' + e.message, 'error');
+        console.warn('[관리자 제거] 북마크 정리 중 오류 (무시):', e.message);
     }
+
+    // ★ 항상 목록 새로고침
+    await loadAdminMembers();
 }
 
-async function deleteBookmarksByOwner(userId, displayName) {
-    var member = APP.adminMembers.find(function(m) { return m.id === userId; });
-    if (!member) return;
-    var ownerEmail = (member.mail || member.userPrincipalName || '').toLowerCase();
+async function deleteBookmarksByOwner(ownerEmail, displayName) {
     if (!ownerEmail) return;
+    ownerEmail = ownerEmail.toLowerCase();
 
     var matching = APP.bookmarks.filter(function(b) {
-        return b.fields.Owner && b.fields.Owner.toLowerCase() === ownerEmail;
+        var owner = b.fields.Owner;
+        if (!owner || typeof owner !== 'string') return false;
+        return owner.toLowerCase() === ownerEmail;
     });
+
     if (matching.length === 0) return;
     if (!confirm(displayName + ' 님이 등록한 북마크 ' + matching.length + '개도 삭제하시겠습니까?')) return;
 
@@ -373,6 +381,7 @@ async function deleteBookmarksByOwner(userId, displayName) {
     showStatus(matching.length + '개 북마크 삭제 완료', 'success');
     await loadBookmarks();
 }
+
 
 function renderAdminTable() {
     var tbody = document.getElementById('adminTableBody');
