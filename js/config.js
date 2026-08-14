@@ -32,17 +32,13 @@ var CONFIG = {
 // ★★★ 전역 상태 ★★★
 // ============================================================
 var APP = {
-    accessToken: null,
     msalInstance: null,
-    isInTeams: false,
-    msalReady: false,
     currentUser: null,
-    currentUserRole: 'user',
-    currentUserId: '',
     currentUserEmail: '',
+    currentUserId: '',
+    currentUserRole: 'user',
+    accessToken: '',
     bookmarks: [],
-    categories: [],
     adminMembers: [],
-    selectedCategory: null,
     sidebarOpen: true
 };
