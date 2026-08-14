@@ -40,16 +40,21 @@ html, body {
 }
 .login-box {
   background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px;
-  padding: 40px 32px; width: 340px; display: flex; flex-direction: column; gap: 16px; text-align: center;
+  padding: 40px 32px; width: 340px; display: flex; flex-direction: column;
+  align-items: center; gap: 16px; text-align: center;
 }
-.login-title { font-size: 22px; color: var(--text-primary); margin-bottom: 4px; }
+.login-icon { margin-bottom: 4px; }
+.login-title { font-size: 20px; color: var(--text-primary); }
 .login-desc { font-size: 13px; color: var(--text-secondary); }
 .btn-login {
+  display: flex; align-items: center; gap: 10px;
   background: var(--accent); color: #fff; border: none; border-radius: 8px;
-  padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+  padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.2s; margin-top: 8px;
 }
 .btn-login:hover { opacity: 0.85; }
-.login-error { color: var(--danger); font-size: 12px; min-height: 18px; }
+.btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+.login-status { font-size: 12px; color: var(--text-muted); min-height: 18px; }
 
 /* ─── 사이드바 ─── */
 .sidebar {
@@ -87,6 +92,7 @@ html, body {
 }
 .sec-public .nav-section-label::before { background-color: var(--success); }
 .sec-admin .nav-section-label::before { background-color: var(--warning); }
+.sec-private .nav-section-label::before { background-color: var(--text-muted); }
 
 .sidebar.collapsed .nav-section-label { font-size: 0; text-align: center; padding: 10px 0 6px; }
 .sidebar.collapsed .nav-section-label::before { margin-right: 0; }
@@ -114,7 +120,7 @@ html, body {
 .blocked-tag {
   font-size: 9px; font-weight: 600; background: rgba(139,148,158,0.12);
   color: var(--text-secondary); padding: 2px 6px; border-radius: 4px;
-  border: 1px solid rgba(139,148,158,0.25); flex-shrink: 0; letter-spacing: 0.3px;
+  border: 1px solid rgba(139,148,158,0.25); flex-shrink: 0;
 }
 
 /* ─── 사이드바 푸터 ─── */
@@ -212,7 +218,7 @@ html, body {
   transition: border-color 0.2s;
 }
 .add-row input:focus { border-color: var(--accent); }
-.add-row input[type="text"], .add-row input[type="url"], .add-row input[type="number"] { flex: 1; }
+.add-row input[type="text"], .add-row input[type="url"] { flex: 1; }
 .add-row select { padding: 8px 10px; cursor: pointer; }
 .preview-fav { width: 24px; height: 24px; border-radius: 4px; flex-shrink: 0; }
 .input-hint { font-size: 11px; color: var(--text-muted); min-height: 0; padding-left: 2px; margin-bottom: 0; }
@@ -223,7 +229,6 @@ html, body {
   white-space: nowrap; transition: opacity 0.2s;
 }
 .btn-add:hover { opacity: 0.85; }
-.btn-sm { padding: 6px 12px; font-size: 12px; }
 
 /* ─── 북마크 섹션 블록 ─── */
 .bm-block { margin-bottom: 14px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
@@ -234,6 +239,7 @@ html, body {
 }
 .bm-block-public { color: var(--success); }
 .bm-block-admin { color: var(--warning); }
+.bm-block-private { color: var(--text-muted); }
 .bm-block-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 .bm-block-list { padding: 6px; min-height: 32px; }
 .bm-empty { font-size: 11px; color: var(--text-muted); text-align: center; padding: 12px; }
@@ -241,10 +247,12 @@ html, body {
 /* ─── 북마크 행 ─── */
 .bm-row {
   display: flex; align-items: center; gap: 10px; padding: 8px 10px;
-  background: var(--bg-surface); border-radius: 6px;
+  background: var(--bg-surface); border-radius: 6px; cursor: grab;
   transition: background 0.15s; margin-bottom: 3px; border: 1px solid transparent;
 }
 .bm-row:hover { background: var(--bg-hover); }
+.bm-row.dragging { opacity: 0.4; }
+.bm-row.drag-over { border-color: var(--accent); background: var(--bg-active); }
 .bm-favicon { width: 22px; height: 22px; border-radius: 4px; flex-shrink: 0; }
 .bm-info-wrap { flex: 1; overflow: hidden; }
 .bm-info { font-size: 12px; font-weight: 500; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -257,40 +265,40 @@ html, body {
 .bm-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .bm-del:hover { border-color: var(--danger); color: var(--danger); }
 
-/* ─── 검색 결과 ─── */
-.search-results { margin-bottom: 16px; }
-.search-item {
+/* ─── 관리자 관리 ─── */
+.admin-search-results { margin-bottom: 16px; }
+.search-result-item {
   display: flex; align-items: center; justify-content: space-between;
   padding: 8px 12px; background: var(--bg-body); border: 1px solid var(--border);
   border-radius: 6px; margin-bottom: 4px; font-size: 12px;
 }
+.search-result-info { color: var(--text-secondary); }
+.search-result-info strong { color: var(--text-primary); }
 
-/* ─── 사용자 관리 ─── */
 .user-list-header {
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 10px; padding: 0 2px;
 }
 .ul-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.ul-count { font-size: 12px; color: var(--text-muted); }
 .user-list { display: flex; flex-direction: column; gap: 6px; }
 .user-item {
   display: flex; align-items: center; gap: 12px; padding: 10px 12px;
   background: var(--bg-body); border: 1px solid var(--border); border-radius: 8px;
 }
 .user-avatar {
-  width: 34px; height: 34px; border-radius: 50%;
+  width: 34px; height: 34px; border-radius: 50%; background: var(--accent);
   display: flex; align-items: center; justify-content: center;
   font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
 }
-.user-avatar.role-admin { background: var(--accent); }
 .user-info { flex: 1; min-width: 0; }
-.user-info-id { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-.user-info-id .me-badge { font-size: 10px; color: var(--accent); font-weight: 500; margin-left: 4px; }
-.user-info-role { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
-.user-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.user-info-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.user-info-name .me-badge { font-size: 10px; color: var(--accent); font-weight: 500; margin-left: 4px; }
+.user-info-email { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
 .btn-user-del {
   background: rgba(233,69,96,0.1); border: 1px solid rgba(233,69,96,0.3);
   color: var(--danger); padding: 4px 10px; border-radius: 4px;
-  font-size: 11px; font-weight: 600; cursor: pointer; transition: background 0.15s;
+  font-size: 11px; font-weight: 600; cursor: pointer; transition: background 0.15s; flex-shrink: 0;
 }
 .btn-user-del:hover { background: rgba(233,69,96,0.2); }
 
@@ -324,21 +332,15 @@ html, body {
 .toast-msg.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ─── 관리자 전용 ─── */
-body:not(.is-admin) .sec-admin { display: none; }
+body:not(.is-admin) .admin-only { display: none; }
 
 /* ─── 반응형 ─── */
 @media (max-width: 768px) {
-  .sidebar {
-    width: var(--sidebar-collapsed);
-    z-index: 200;
-  }
-
+  .sidebar { width: var(--sidebar-collapsed); z-index: 200; }
   .sidebar.expanded {
-    width: var(--sidebar-width);
-    position: fixed;
+    width: var(--sidebar-width); position: fixed;
     box-shadow: 4px 0 24px rgba(0,0,0,0.5);
   }
-
   .sidebar:not(.expanded) .sidebar-title { display: none; }
   .sidebar:not(.expanded) .nav-section-label { font-size: 0; text-align: center; padding: 10px 0 6px; }
   .sidebar:not(.expanded) .nav-section-label::before { margin-right: 0; }
@@ -351,7 +353,6 @@ body:not(.is-admin) .sec-admin { display: none; }
   .sidebar:not(.expanded) .footer-actions { flex-direction: column; }
   .sidebar:not(.expanded) .sidebar-footer { flex-direction: column; align-items: center; padding: 8px 4px; gap: 6px; }
   .sidebar:not(.expanded) .sidebar-header { justify-content: center; padding: 16px 0; }
-
   .main-content { left: var(--sidebar-collapsed); }
   .modal { max-width: 95vw; }
 }

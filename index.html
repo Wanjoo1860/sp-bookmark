@@ -4,18 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>즐겨찾기 포털</title>
-  <link rel="stylesheet" href="css/style.css">
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <!-- ─── 로그인 화면 ─── -->
+  <!-- ─── 로그인 ─── -->
   <div id="loginWrap" class="login-wrap">
     <div class="login-box">
+      <div class="login-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="1.5">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+      </div>
       <h2 class="login-title">즐겨찾기 포털</h2>
-      <p class="login-desc">Microsoft 365 계정으로 로그인하세요</p>
-      <button id="btnMsLogin" class="btn-login">Microsoft로 로그인</button>
-      <p id="loginError" class="login-error"></p>
+      <p class="login-desc" id="loginDesc">Microsoft 365 계정으로 로그인하세요.</p>
+      <button id="btnMsLogin" class="btn-login" onclick="login()">
+        <svg width="16" height="16" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+        Microsoft로 로그인
+      </button>
+      <p class="login-status" id="loginStatus"></p>
     </div>
   </div>
 
@@ -35,7 +44,7 @@
     <div class="sidebar-footer">
       <span class="footer-user" id="footerUser"></span>
       <div class="footer-actions">
-        <button id="btnManager" class="btn-icon" title="관리" style="display:none;">
+        <button id="btnManager" class="btn-icon" title="설정">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
@@ -50,7 +59,7 @@
   </aside>
 
   <!-- ─── 메인 콘텐츠 ─── -->
-  <main class="main-content">
+  <main class="main-content" id="mainContent" style="display:none;">
     <div id="welcomeScreen" class="screen welcome-screen">
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4">
         <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
@@ -82,7 +91,7 @@
     <iframe id="contentFrame" class="content-frame" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-popups-to-escape-sandbox"></iframe>
   </main>
 
-  <!-- ─── 관리 모달 ─── -->
+  <!-- ─── 설정 모달 ─── -->
   <div id="modalOverlay" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
@@ -95,7 +104,6 @@
         <button id="btnCloseModal" class="btn-icon modal-close">&times;</button>
       </div>
 
-      <!-- 탭 -->
       <div class="modal-tabs">
         <button class="modal-tab active" data-tab="bookmarks">즐겨찾기</button>
         <button class="modal-tab" data-tab="users" id="tabUsers">관리자 관리</button>
@@ -104,7 +112,7 @@
       <!-- 즐겨찾기 탭 -->
       <div class="modal-body" id="panelBookmarks">
         <div class="add-form">
-          <h4 class="form-title" id="formTitle">새 북마크 추가</h4>
+          <h4 class="form-title">새 북마크 추가</h4>
           <div class="add-row">
             <img id="previewFav" class="preview-fav" src="" alt="" style="display:none;">
             <input type="text" id="inputUrl" placeholder="URL (https://...)">
@@ -116,15 +124,12 @@
           <div class="add-row">
             <input type="text" id="inputDesc" placeholder="설명 (선택)">
           </div>
-          <div class="add-row">
-            <input type="text" id="inputCategory" placeholder="카테고리 (선택)">
-          </div>
           <div class="add-row" id="visRow">
             <select id="inputVis">
               <option value="public">공개</option>
               <option value="admin">관리자 전용</option>
+              <option value="private">개인</option>
             </select>
-            <input type="number" id="inputSortOrder" placeholder="정렬순서" value="0" style="width:80px;">
             <button id="btnAddBm" class="btn-add">추가</button>
           </div>
         </div>
@@ -132,22 +137,18 @@
       </div>
 
       <!-- 관리자 관리 탭 -->
-      <div class="modal-body" id="panelUsers" style="display:none">
+      <div class="modal-body" id="panelUsers" style="display:none;">
         <div class="add-form">
           <h4 class="form-title">관리자 추가</h4>
           <div class="add-row">
-            <input type="text" id="inputAdminSearch" placeholder="이메일 또는 이름으로 검색" autocomplete="off">
-            <button id="btnSearchUser" class="btn-add">검색</button>
+            <input type="text" id="adminSearchInput" placeholder="이메일 또는 이름으로 검색">
+            <button class="btn-add" id="btnAdminSearch">검색</button>
           </div>
         </div>
-        <div id="searchResults" class="search-results"></div>
+        <div id="adminSearchResults" class="admin-search-results"></div>
         <div class="user-list-header">
-          <span class="ul-title">관리자 목록</span>
-          <button id="btnRefreshAdmins" class="btn-icon" title="새로고침">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-            </svg>
-          </button>
+          <span class="ul-title">등록된 관리자</span>
+          <span class="ul-count" id="adminCount">0명</span>
         </div>
         <div id="adminList" class="user-list"></div>
       </div>
@@ -177,15 +178,12 @@
         <div class="add-row">
           <input type="text" id="editDesc" placeholder="설명 (선택)">
         </div>
-        <div class="add-row">
-          <input type="text" id="editCategory" placeholder="카테고리">
-        </div>
         <div class="add-row" id="editVisRow">
           <select id="editVis">
             <option value="public">공개</option>
             <option value="admin">관리자 전용</option>
+            <option value="private">개인</option>
           </select>
-          <input type="number" id="editSortOrder" placeholder="정렬" style="width:80px;">
           <button id="btnSaveEdit" class="btn-add">저장</button>
         </div>
       </div>
@@ -209,8 +207,10 @@
   <div id="toastMsg" class="toast-msg"></div>
 
   <!-- ─── 스크립트 ─── -->
+  <script src="https://res.cdn.office.net/teams-js/2.31.1/js/MicrosoftTeams.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@4.30.0/lib/msal-browser.min.js"></script>
   <script src="js/config.js"></script>
+  <script src="js/graph.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/app.js"></script>
 </body>

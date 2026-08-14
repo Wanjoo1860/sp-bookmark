@@ -33,12 +33,36 @@ var CONFIG = {
 // ============================================================
 var APP = {
     msalInstance: null,
+    msalReady: false,
+    isInTeams: false,
+    accessToken: null,
+
     currentUser: null,
-    currentUserEmail: '',
     currentUserId: '',
+    currentUserEmail: '',
     currentUserRole: 'user',
-    accessToken: '',
+
     bookmarks: [],
     adminMembers: [],
+    dynamicBlocked: [],
+
+    currentUrl: '',
+    pageCallId: 0,
+    checkTimer: null,
+    loadTimer: null,
+    hoverTimer: null,
+    editingId: null,
     sidebarOpen: true
 };
+
+// 알려진 iframe 차단 도메인
+var KNOWN_BLOCKED = [
+    'google.com','youtube.com','github.com','naver.com','daum.net','kakao.com',
+    'mail.google.com','chat.openai.com','claude.ai','facebook.com','instagram.com',
+    'twitter.com','x.com','linkedin.com','reddit.com','netflix.com','amazon.com',
+    'apple.com','microsoft.com','notion.so','figma.com','slack.com','discord.com',
+    'dropbox.com','drive.google.com','stackoverflow.com','openai.com','tistory.com',
+    'velog.io','medium.com','twitch.tv','spotify.com','pinterest.com','zoom.us',
+    'teams.microsoft.com','outlook.com','office.com','outlook.cloud.microsoft',
+    'vercel.com','netlify.com','linear.app','developer.mozilla.org','yahoo.com'
+];
