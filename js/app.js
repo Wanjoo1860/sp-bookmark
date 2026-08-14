@@ -10,6 +10,18 @@ function getHostname(url) {
     catch(e) { return ''; }
 }
 
+// ─── URL 필드 유틸 (SharePoint 하이퍼링크 타입 대응) ───
+function extractUrl(field) {
+    if (!field) return '';
+    if (typeof field === 'string') return field;
+    if (typeof field === 'object' && field.Url) return field.Url;
+    return String(field);
+}
+
+function buildUrlField(url, description) {
+    return { Url: url, Description: description || url };
+}
+
 function isBlocked(url) {
     var h = getHostname(url);
     if (!h) return false;
@@ -189,7 +201,7 @@ function visible(bm) {
 // ─── 호버 카드 ───
 function showHoverCard(bm, targetEl) {
     var f = bm.fields || bm;
-    var url = f.Url || '';
+    var url = extractUrl(f.Url);
     var hFav = document.getElementById('hoverFav');
     var hName = document.getElementById('hoverName');
     var hUrl = document.getElementById('hoverUrl');
@@ -273,7 +285,7 @@ function makeSection(label, items, cls) {
 
     items.forEach(function(bm) {
         var f = bm.fields || bm;
-        var url = f.Url || '';
+        var url = extractUrl(f.Url);
         var title = f.Title || '';
 
         var item = document.createElement('div');
@@ -388,7 +400,7 @@ async function addBookmark() {
 
     var fields = {
         Title: name,
-        Url: url,
+        Url: buildUrlField(url, name),
         Description: desc,
         Visibility: vis,
         Owner: APP.currentUserEmail,
@@ -438,14 +450,15 @@ async function deleteBookmark(id) {
 // ============================================================
 function openEditModal(bm) {
     var f = bm.fields || bm;
+    var bmUrl = extractUrl(f.Url);
     APP.editingId = bm.id;
-    document.getElementById('editUrl').value = f.Url || '';
+    document.getElementById('editUrl').value = bmUrl;
     document.getElementById('editName').value = f.Title || '';
     document.getElementById('editDesc').value = f.Description || '';
     document.getElementById('editVis').value = f.Visibility || 'public';
 
     var editFav = document.getElementById('editFav');
-    editFav.src = faviconUrl(f.Url || '');
+    editFav.src = faviconUrl(bmUrl);
     editFav.style.display = 'inline-block';
     editFav.onerror = function() { this.style.display = 'none'; };
 
@@ -472,7 +485,7 @@ async function saveEdit() {
     if (!url.startsWith('http')) url = 'https://' + url;
     if (APP.currentUserRole !== 'admin') vis = undefined; // 일반 사용자는 vis 변경 불가
 
-    var fields = { Title: name, Url: url, Description: desc };
+    var fields = { Title: name, Url: buildUrlField(url, name), Description: desc };
     if (vis) fields.Visibility = vis;
 
     try {
@@ -543,6 +556,7 @@ function renderBmSection(container, label, vis, ownerOnly) {
 
     items.forEach(function(bm) {
         var f = bm.fields || bm;
+        var bmUrl = extractUrl(f.Url);
         var row = document.createElement('div');
         row.className = 'bm-row';
         row.draggable = true;
@@ -551,9 +565,9 @@ function renderBmSection(container, label, vis, ownerOnly) {
 
         var favicon = document.createElement('img');
         favicon.className = 'bm-favicon';
-        favicon.src = f.IconUrl || faviconUrl(f.Url || '', 32);
+        favicon.src = f.IconUrl || faviconUrl(bmUrl, 32);
         favicon.alt = '';
-        favicon.onerror = function() { handleImgError(this, f.Url || '', f.Title || ''); };
+        favicon.onerror = function() { handleImgError(this, bmUrl, f.Title || ''); };
 
         var infoWrap = document.createElement('div');
         infoWrap.className = 'bm-info-wrap';
@@ -562,14 +576,14 @@ function renderBmSection(container, label, vis, ownerOnly) {
         info.textContent = f.Title || '';
         var sub = document.createElement('span');
         sub.className = 'bm-sub';
-        sub.textContent = getHostname(f.Url || '');
+        sub.textContent = getHostname(bmUrl);
         infoWrap.appendChild(info);
         infoWrap.appendChild(sub);
 
         row.appendChild(favicon);
         row.appendChild(infoWrap);
 
-        if (isBlocked(f.Url || '')) {
+        if (isBlocked(bmUrl)) {
             var tag = document.createElement('span');
             tag.className = 'blocked-tag';
             tag.textContent = '새 창';
