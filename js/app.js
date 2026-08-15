@@ -10,14 +10,6 @@ function getHostname(url) {
     catch(e) { return ''; }
 }
 
-// ─── URL 필드 유틸 (SharePoint 하이퍼링크 타입 대응) ───
-function extractUrl(field) {
-    if (!field) return '';
-    if (typeof field === 'string') return field;
-    if (typeof field === 'object' && field.Url) return field.Url;
-    return String(field);
-}
-
 function isBlocked(url) {
     var h = getHostname(url);
     if (!h) return false;
@@ -197,7 +189,7 @@ function visible(bm) {
 // ─── 호버 카드 ───
 function showHoverCard(bm, targetEl) {
     var f = bm.fields || bm;
-    var url = extractUrl(f.Url);
+    var url = f.URL || '';
     var hFav = document.getElementById('hoverFav');
     var hName = document.getElementById('hoverName');
     var hUrl = document.getElementById('hoverUrl');
@@ -281,7 +273,7 @@ function makeSection(label, items, cls) {
 
     items.forEach(function(bm) {
         var f = bm.fields || bm;
-        var url = extractUrl(f.Url);
+        var url = f.URL || '';
         var title = f.Title || '';
 
         var item = document.createElement('div');
@@ -354,7 +346,6 @@ window.loadBookmarks = async function() {
         APP.bookmarks = result.value || [];
         renderNav();
     } catch (e) {
-        // orderby 실패 시 정렬 없이 재시도
         try {
             var url2 = CONFIG.graphUrl + '/sites/' + CONFIG.siteId +
                       '/lists/' + CONFIG.bookmarksListId +
@@ -385,7 +376,6 @@ async function addBookmark() {
     if (!url || !name) { toast('URL과 이름을 입력하세요'); return; }
     if (!url.startsWith('http')) url = 'https://' + url;
 
-    // 일반 사용자는 개인만 가능
     if (APP.currentUserRole !== 'admin') vis = 'private';
 
     var maxOrder = 0;
@@ -396,7 +386,7 @@ async function addBookmark() {
 
     var fields = {
         Title: name,
-        Url: url,
+        URL: url,
         Description: desc,
         Visibility: vis,
         Owner: APP.currentUserEmail,
@@ -446,7 +436,7 @@ async function deleteBookmark(id) {
 // ============================================================
 function openEditModal(bm) {
     var f = bm.fields || bm;
-    var bmUrl = extractUrl(f.Url);
+    var bmUrl = f.URL || '';
     APP.editingId = bm.id;
     document.getElementById('editUrl').value = bmUrl;
     document.getElementById('editName').value = f.Title || '';
@@ -479,9 +469,9 @@ async function saveEdit() {
 
     if (!url || !name) { toast('URL과 이름을 입력하세요'); return; }
     if (!url.startsWith('http')) url = 'https://' + url;
-    if (APP.currentUserRole !== 'admin') vis = undefined; // 일반 사용자는 vis 변경 불가
+    if (APP.currentUserRole !== 'admin') vis = undefined;
 
-    var fields = { Title: name, Url: url, Description: desc };
+    var fields = { Title: name, URL: url, Description: desc };
     if (vis) fields.Visibility = vis;
 
     try {
@@ -552,7 +542,7 @@ function renderBmSection(container, label, vis, ownerOnly) {
 
     items.forEach(function(bm) {
         var f = bm.fields || bm;
-        var bmUrl = extractUrl(f.Url);
+        var bmUrl = f.URL || '';
         var row = document.createElement('div');
         row.className = 'bm-row';
         row.draggable = true;
@@ -586,7 +576,6 @@ function renderBmSection(container, label, vis, ownerOnly) {
             row.appendChild(tag);
         }
 
-        // 편집 버튼
         var canEdit = (APP.currentUserRole === 'admin') ||
                       (typeof f.Owner === 'string' && f.Owner.toLowerCase() === APP.currentUserEmail);
         if (canEdit) {
@@ -653,7 +642,6 @@ async function reorderBookmarks(dragId, targetId, vis, ownerOnly) {
     var moved = items.splice(dragIdx, 1)[0];
     items.splice(targetIdx, 0, moved);
 
-    // SortOrder 업데이트
     var promises = [];
     items.forEach(function(bm, i) {
         var oldOrder = (bm.fields || bm).SortOrder || 0;
@@ -798,7 +786,6 @@ async function removeAdmin(userId, displayName, email) {
 
     toast(displayName + ' 관리자에서 제거 완료');
 
-    // 북마크 정리
     try {
         await deleteBookmarksByOwner(email, displayName);
     } catch (e) {
@@ -856,14 +843,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 설정 모달
     document.getElementById('btnManager').addEventListener('click', function() {
-        // 탭 초기화
         document.querySelectorAll('.modal-tab').forEach(function(t) { t.classList.remove('active'); });
         document.querySelector('.modal-tab[data-tab="bookmarks"]').classList.add('active');
         document.getElementById('panelBookmarks').style.display = '';
         document.getElementById('panelUsers').style.display = 'none';
 
-        // vis select 표시 여부
-        var visRow = document.getElementById('visRow');
         var inputVis = document.getElementById('inputVis');
         if (APP.currentUserRole === 'admin') {
             inputVis.style.display = '';
