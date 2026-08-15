@@ -290,7 +290,7 @@ function makeSection(label, items, cls) {
 
         var icon = document.createElement('img');
         icon.className = 'nav-icon';
-        icon.src = f.IconUrl || faviconUrl(url);
+        icon.src = faviconUrl(url);
         icon.alt = '';
         icon.onerror = function() { handleImgError(this, url, title); };
 
@@ -561,7 +561,7 @@ function renderBmSection(container, label, vis, ownerOnly) {
 
         var favicon = document.createElement('img');
         favicon.className = 'bm-favicon';
-        favicon.src = f.IconUrl || faviconUrl(bmUrl, 32);
+        favicon.src = faviconUrl(bmUrl, 32);
         favicon.alt = '';
         favicon.onerror = function() { handleImgError(this, bmUrl, f.Title || ''); };
 
