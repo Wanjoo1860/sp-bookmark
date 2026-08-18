@@ -60,6 +60,17 @@ export function initBookmarkModal(options) {
 
   // 편집 저장
   btnSaveEdit.addEventListener('click', handleSaveEdit);
+  // ─── 역할별 UI 제어 ─── //
+  const visRow = $('#visRow');       // 추가 폼의 공개 여부 행
+  const formTitle = $('#formTitle'); // 폼 제목
+
+  if (currentUser.role === 'admin') {
+    // Admin: 공개 여부 선택 표시, 제목 유지
+    visRow.style.display = 'flex';
+  } else {
+    // Member & Guest: 공개 여부 숨김 (자동으로 private 설정)
+    visRow.style.display = 'none';
+  }
 }
 
 export function renderBmList() {
