@@ -12,7 +12,7 @@ const BASE = `${sharepointConfig.graphUrl}/sites/${sharepointConfig.siteId}/list
 /** 전체 북마크 조회 */
 export async function fetchAllBookmarks() {
   let allItems = [];
-  let url = `${BASE}?$expand=fields&$top=200&$orderby=fields/SortOrder asc`;
+  let url = `${BASE}?$expand=fields&$top=200&$orderby=fields/${fieldMap.ord} asc`;
 
   while (url) {
     const response = await graphFetch(url);
@@ -26,6 +26,10 @@ export async function fetchAllBookmarks() {
 
 /** 북마크 추가 */
 export async function createBookmark(bookmark) {
+  // 필수 필드 검증
+  if (!bookmark.name || !bookmark.url) {
+    throw new Error('[createBookmark] name과 url은 필수 값입니다.');
+  }
   const body = { fields: bookmarkToSpFields(bookmark) };
   const response = await graphFetch(BASE, { method: 'POST', body });
   return spItemToBookmark(response);
@@ -60,7 +64,8 @@ export async function batchUpdateOrder(items) {
 
 /** 특정 Owner의 private 북마크 삭제 */
 export async function deletePrivateBookmarksByOwner(ownerEmail) {
-  const url = `${BASE}?$expand=fields&$filter=fields/Visibility eq 'private' and fields/Owner eq '${ownerEmail}'&$top=200`;
+  const filterQuery = `fields/${fieldMap.vis} eq 'private' and fields/${fieldMap.owner} eq '${ownerEmail}'`;
+  const url = `${BASE}?$expand=fields&$filter=${filterQuery}&$top=200`;
   const response = await graphFetch(url);
   const items = response.value || [];
   const delPromises = items.map(item =>
