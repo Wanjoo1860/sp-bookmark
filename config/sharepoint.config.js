@@ -17,7 +17,7 @@ export const sharepointConfig = {
  */
 export const fieldMap = {
   name: "Title",
-  url: "Url",
+  url: "URL",
   desc: "Description",
   category: "Category",
   vis: "Visibility",
