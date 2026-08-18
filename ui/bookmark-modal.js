@@ -38,6 +38,11 @@ export function initBookmarkModal(options) {
   // URL 입력 실시간 피드백
   inputUrl.addEventListener('input', onUrlInput);
 
+  // 이름 입력 시 자동완성 플래그 해제
+  inputName.addEventListener('input', function () {
+    inputName.dataset.auto = 'false';
+  });
+
   // 추가 버튼
   btnAddBm.addEventListener('click', handleAdd);
 
@@ -96,9 +101,17 @@ function onUrlInput() {
     inputHint.style.color = '';
   }
 
-  if (!inputName.value.trim()) {
+  // 이름 자동완성: 사용자가 직접 수정한 적 없을 때만
+  if (!inputName.value.trim() || inputName.dataset.auto === 'true') {
     const h = getHostname(full);
-    if (h) inputName.value = h.replace(/^www\./, '');
+    if (h) {
+      const readable = h.replace(/^www\./, '');
+      // Punycode(xn--) 도메인은 자동완성하지 않음
+      if (!readable.startsWith('xn--')) {
+        inputName.value = readable;
+        inputName.dataset.auto = 'true';
+      }
+    }
   }
 }
 
@@ -121,10 +134,14 @@ async function handleAdd() {
     ord: bookmarks.length
   };
 
+  // 디버그: 전송 데이터 확인 (문제 해결 후 제거 가능)
+  console.log('[DEBUG] addBookmark 전송:', JSON.stringify(bmData, null, 2));
+
   try {
     await dataService.addBookmark(bmData);
     inputUrl.value = '';
     inputName.value = '';
+    inputName.dataset.auto = 'false';
     inputDesc.value = '';
     inputHint.textContent = '';
     previewFav.style.display = 'none';
@@ -132,6 +149,9 @@ async function handleAdd() {
     if (onDataChanged) onDataChanged();
     toast('추가 완료');
   } catch (e) {
+    // 에러 상세 출력
+    console.error('[ERROR] addBookmark 실패:', e);
+    if (e.body) console.error('[ERROR] 서버 응답:', JSON.stringify(e.body, null, 2));
     toast('추가 실패: ' + (e.message || '알 수 없는 오류'));
   }
 }
@@ -171,6 +191,8 @@ async function handleSaveEdit() {
     if (onDataChanged) onDataChanged();
     toast('수정 완료');
   } catch (e) {
+    console.error('[ERROR] updateBookmark 실패:', e);
+    if (e.body) console.error('[ERROR] 서버 응답:', JSON.stringify(e.body, null, 2));
     toast('수정 실패: ' + (e.message || '알 수 없는 오류'));
   }
 }
@@ -259,6 +281,7 @@ function renderBmSection(label, vis, ownerOnly, bookmarks) {
         if (onDataChanged) onDataChanged();
         toast('삭제 완료');
       } catch (err) {
+        console.error('[ERROR] deleteBookmark 실패:', err);
         toast('삭제 실패');
       }
     });
@@ -313,6 +336,7 @@ async function handleReorder(dragId, targetId, vis, ownerOnly, bookmarks) {
     renderBmList();
     if (onDataChanged) onDataChanged();
   } catch (e) {
+    console.error('[ERROR] reorder 실패:', e);
     toast('정렬 저장 실패');
   }
 }
