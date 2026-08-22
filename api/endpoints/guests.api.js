@@ -13,25 +13,26 @@ const teamGroupId = roleConfig.teamGroupId;
 export async function inviteGuest(email, displayName = '') {
   logger.info('GuestsAPI', `Inviting guest: ${email}`);
 
-  // 1. Azure AD에 Guest 초대
   const invitationBody = {
     invitedUserEmailAddress: email,
     invitedUserDisplayName: displayName || email.split('@')[0],
     inviteRedirectUrl: window.location.origin,
-    sendInvitationMessage: true
+    sendInvitationMessage: true,
+    invitedUserMessageInfo: {                    // ✅ 선택: 커스텀 메시지 추가
+      customizedMessageBody: '즐겨찾기 포털에 Guest로 초대되었습니다. 아래 링크를 클릭하여 수락해 주세요.'
+    }
   };
 
   const invitation = await graphPost('/invitations', invitationBody);
   const guestUserId = invitation.invitedUser.id;
 
-  // 2. 팀 멤버로 추가 (Guest 유형은 Azure AD에서 자동 판별)
+  // 2. 팀 멤버로 추가
   try {
     const memberBody = {
       '@odata.id': `https://graph.microsoft.com/v1.0/directoryObjects/${guestUserId}`
     };
     await graphPost(`/groups/${teamGroupId}/members/$ref`, memberBody);
   } catch (error) {
-    // 이미 멤버인 경우 무시
     if (error.status !== 400) throw error;
     logger.warn('GuestsAPI', 'User already a member of the group');
   }
@@ -39,9 +40,12 @@ export async function inviteGuest(email, displayName = '') {
   return {
     id: guestUserId,
     email: email,
-    displayName: invitation.invitedUser.displayName || displayName
+    displayName: invitation.invitedUser.displayName || displayName,
+    status: invitation.status,                   // ✅ 추가: 초대 상태 반환
+    inviteRedeemUrl: invitation.inviteRedeemUrl   // ✅ 추가: 직접 수락 URL
   };
 }
+
 
 /**
  * Guest 삭제 (팀에서 제거)
