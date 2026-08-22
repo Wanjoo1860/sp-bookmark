@@ -201,9 +201,12 @@
   <div id="toastMsg" class="toast-msg"></div>
 
   <!-- ─── 외부 라이브러리 ─── -->
-  <script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"
-        onerror="document.getElementById('loginError').textContent='MSAL 라이브러리 로드 실패. 네트워크를 확인하세요.'">
-  </script>
+  <script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"
+      integrity="sha384-PARf28kmic36Ve+O3DnUerRXFtOQ7ZDqRDGpLcbljly5/N39T2OV3kt3QsWOKeAX"
+      crossorigin="anonymous"
+      onerror="document.getElementById('loginError').textContent='MSAL 라이브러리 로드 실패. 네트워크를 확인하세요.'">
+</script>
+
   <script type="module" src="main.js"></script>
 
 </body>
