@@ -1,0 +1,389 @@
+/* ============================================================
+   기존 style.css 전체 내용 (그대로 유지)
+   ============================================================ */
+
+/* [여기에 기존 CSS 전체 그대로 위치 — 생략 표시] */
+
+
+/* ============================================================
+   ★ 신규 추가 스타일 (v1.0 Teams 앱 변환)
+   ============================================================ */
+
+/* ─── 로그인 화면 (Microsoft 버튼) ─── */
+.login-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.btn-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-login:hover { opacity: 0.85; }
+.btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-login svg { flex-shrink: 0; }
+
+/* ─── 로딩 인라인 ─── */
+.loading-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.loading-spinner-sm {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.error-text {
+  color: var(--danger);
+  font-size: 13px;
+  padding: 20px;
+  text-align: center;
+}
+
+/* ─── 멤버 관리 — 검색 ─── */
+.member-search-section {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-results {
+  max-height: 240px;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+
+.search-loading,
+.search-empty,
+.search-error {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 12px;
+  text-align: center;
+}
+.search-error { color: var(--danger); }
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background: var(--bg-body);
+  transition: background 0.15s;
+}
+.search-result-item:hover { background: var(--bg-hover); }
+
+.search-user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.search-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.search-user-detail {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-user-email {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-user-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-action {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.btn-promote {
+  background: rgba(88,166,255,0.1);
+  border: 1px solid rgba(88,166,255,0.3);
+  color: var(--accent);
+}
+.btn-promote:hover { background: rgba(88,166,255,0.2); }
+
+.btn-add-member {
+  background: rgba(63,185,80,0.1);
+  border: 1px solid rgba(63,185,80,0.3);
+  color: var(--success);
+}
+.btn-add-member:hover { background: rgba(63,185,80,0.2); }
+
+/* ─── 상태 배지 ─── */
+.status-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.badge-owner { background: rgba(88,166,255,0.15); color: var(--accent); }
+.badge-member { background: rgba(63,185,80,0.15); color: var(--success); }
+.badge-guest { background: rgba(240,136,62,0.15); color: var(--warning); }
+
+/* ─── 멤버 섹션 ─── */
+.member-section {
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.member-section-header {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-body);
+  border-bottom: 1px solid var(--border);
+}
+
+.member-section-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.section-owner { color: var(--accent); }
+.section-member { color: var(--success); }
+.section-guest { color: var(--warning); }
+
+.member-count {
+  font-weight: 500;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: auto;
+  text-transform: none;
+}
+
+.member-list {
+  padding: 6px;
+}
+
+.member-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-surface);
+  border-radius: 6px;
+  margin-bottom: 4px;
+  transition: background 0.15s;
+}
+.member-item:hover { background: var(--bg-hover); }
+
+/* ─── Guest 전용 아바타 색상 ─── */
+.user-avatar.role-guest { background: var(--warning); }
+
+/* ─── Guest 초대 폼 ─── */
+.guest-invite-form {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ─── 사용 내역 ─── */
+.usage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.usage-summary {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.usage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.usage-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.usage-item > .usage-user {
+  padding: 0;
+}
+
+.usage-item {
+  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.usage-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.usage-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.usage-user-email {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.usage-user-count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.usage-user-count strong {
+  color: var(--accent);
+}
+
+.usage-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-expand {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 10px;
+  transition: background 0.15s;
+}
+.btn-expand:hover { background: var(--bg-hover); }
+
+/* ─── 사용 내역 상세 ─── */
+.usage-detail {
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.usage-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+.usage-detail-row:hover { background: var(--bg-hover); }
+
+.usage-detail-title {
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.usage-detail-url {
+  color: var(--text-muted);
+  font-size: 11px;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+/* ─── 탭 패널 공통 ─── */
+.tab-panel {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ─── 관리자 전용 — 사이드바에서만 적용 ─── */
+body:not(.is-admin) .sec-admin { display: none; }
