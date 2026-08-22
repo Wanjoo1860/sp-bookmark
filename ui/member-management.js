@@ -4,6 +4,7 @@
 import { fetchTeamOwners, fetchTeamMembers, fetchTeamGuests, searchOrganizationUsers, promoteToAdmin, demoteFromAdmin } from '../api/endpoints/members.api.js';
 import { inviteGuest, removeGuestFromTeam, validateGuestEmail } from '../api/endpoints/guests.api.js';
 import { removeUserBookmarks } from '../services/data-service.js';
+import { getAuthState } from '../auth/auth-guard.js'; 
 import { showToast } from './toast.js';
 import { logger } from '../utils/logger.js';
 
@@ -203,23 +204,36 @@ function createMemberSection(title, list, type) {
 
     const actions = item.querySelector('.user-actions');
 
-    if (type === 'owner') {
-      // 관리자 → 멤버로 강등
-      const demoteBtn = document.createElement('button');
-      demoteBtn.className = 'btn-user-role';
-      demoteBtn.textContent = '→ 멤버로 강등';
-      demoteBtn.addEventListener('click', async () => {
-        if (!confirm(`"${user.displayName}"을(를) 멤버로 강등하시겠습니까?`)) return;
-        try {
-          await demoteFromAdmin(user.id);
-          showToast(`"${user.displayName}" 멤버로 강등 완료`, 'success');
-          await initMemberManagement();
-        } catch (error) {
-          showToast('강등 실패: ' + error.message, 'error');
-        }
-      });
-      actions.appendChild(demoteBtn);
+        if (type === 'owner') {
+      const currentState = getAuthState();
+      const isSelf = (user.email || user.mail || user.userPrincipalName || '').toLowerCase() === currentState.email?.toLowerCase();
+
+      if (isSelf) {
+        const selfLabel = document.createElement('span');
+        selfLabel.className = 'self-label';
+        selfLabel.textContent = '(본인)';
+        selfLabel.style.cssText = 'color: var(--text-muted); font-size: 12px; padding: 4px 8px;';
+        actions.appendChild(selfLabel);
+      } else {
+        const demoteBtn = document.createElement('button');
+        demoteBtn.className = 'btn-user-role';
+        demoteBtn.textContent = '→ 멤버로 강등';
+        demoteBtn.addEventListener('click', async () => {
+          if (!confirm(`"${user.displayName}"을(를) 멤버로 강등하시겠습니까?`)) return;
+          try {
+            await demoteFromAdmin(user.id);
+            showToast(`"${user.displayName}" 멤버로 강등 완료`, 'success');
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            await initMemberManagement();
+          } catch (error) {
+            showToast('강등 실패: ' + error.message, 'error');
+          }
+        });
+        actions.appendChild(demoteBtn);
+      }
     }
+
+
 
     if (type === 'member') {
       // 멤버 → 관리자 승격
@@ -305,10 +319,10 @@ function createGuestSection() {
     try {
       inviteBtn.disabled = true;
       inviteBtn.textContent = '초대 중...';
-      await inviteGuest(email);
       emailInput.value = '';
       hint.textContent = '';
-      showToast(`"${email}" Guest 초대 완료`, 'success');
+      const result = await inviteGuest(email);
+showToast(`"${email}" 초대 완료. 초대 메일이 발송되었습니다. (스팸 폴더도 확인해 주세요)`, 'success');
       await initMemberManagement();
     } catch (error) {
       showToast('초대 실패: ' + error.message, 'error');

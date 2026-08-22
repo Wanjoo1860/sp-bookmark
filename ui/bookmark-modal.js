@@ -172,7 +172,8 @@ function renderBmSection(label, vis, ownerOnly) {
   const state = getAuthState();
 
   let items;
-  if (ownerOnly && state.role !== 'admin') {
+  if (ownerOnly) {
+    // ✅ 수정: admin 여부와 관계없이, ownerOnly가 true면 본인 것만 표시
     items = allBookmarks.filter(b => b.visibility === vis && b.owner?.toLowerCase() === state.email?.toLowerCase());
   } else {
     items = allBookmarks.filter(b => b.visibility === vis);
@@ -294,7 +295,8 @@ async function handleReorder(dragId, targetId, vis, ownerOnly) {
   const state = getAuthState();
 
   let sectionItems;
-  if (ownerOnly && state.role !== 'admin') {
+  if (ownerOnly) {
+    // ✅ 수정: 동일하게 admin 조건 제거
     sectionItems = allBookmarks.filter(b => b.visibility === vis && b.owner?.toLowerCase() === state.email?.toLowerCase());
   } else {
     sectionItems = allBookmarks.filter(b => b.visibility === vis);
