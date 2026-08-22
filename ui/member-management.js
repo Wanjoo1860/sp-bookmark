@@ -3,7 +3,6 @@
  */
 import { fetchTeamOwners, fetchTeamMembers, fetchTeamGuests, searchOrganizationUsers, promoteToAdmin, demoteFromAdmin, removeTeamMember } from '../api/endpoints/members.api.js';
 import { inviteGuest, removeGuestFromTeam, validateGuestEmail } from '../api/endpoints/guests.api.js';
-import { removeUserBookmarks } from '../services/data-service.js';
 import { getAuthState } from '../auth/auth-guard.js'; 
 import { showToast } from './toast.js';
 import { logger } from '../utils/logger.js';
@@ -288,19 +287,17 @@ function createMemberSection(title, list, type) {
       actions.appendChild(promoteBtn);
 
       // 멤버 개인 북마크 삭제
-            // 멤버 삭제 (팀에서 제외 + 개인 북마크 삭제)
       const delMemberBtn = document.createElement('button');
       delMemberBtn.className = 'btn-user-del';
       delMemberBtn.textContent = '삭제';
-      delMemberBtn.title = '팀에서 제외 및 개인 즐겨찾기 삭제';
+      delMemberBtn.title = '팀에서 제외';
       delMemberBtn.addEventListener('click', async () => {
-        if (!confirm(`"${user.displayName}"을(를) 삭제하시겠습니까?\n\n· Teams 팀 멤버에서 제외\n· 등록된 개인 즐겨찾기 삭제`)) return;
+        if (!confirm(`"${user.displayName}"을(를) 팀에서 삭제하시겠습니까?`)) return;
         try {
           delMemberBtn.disabled = true;
           delMemberBtn.textContent = '삭제 중...';
           await removeTeamMember(user.id);
-          await removeUserBookmarks(user.email);
-          showToast(`"${user.displayName}" 삭제 완료 (팀 제외 + 즐겨찾기 삭제)`, 'success');
+          showToast(`"${user.displayName}" 팀에서 삭제 완료`, 'success');
 
           // 낙관적 UI 업데이트
           members = members.filter(m => m.id !== user.id);
@@ -411,13 +408,12 @@ function createGuestSection() {
     delBtn.className = 'btn-user-del';
     delBtn.textContent = '삭제';
         delBtn.addEventListener('click', async () => {
-        if (!confirm(`"${user.displayName}"을(를) 삭제하시겠습니까?\n\n· Guest 계정 삭제\n· 등록된 개인 즐겨찾기 삭제`)) return;
+        if (!confirm(`"${user.displayName}"을(를) 삭제하시겠습니까?\n\n· Guest 계정을 팀에서 제거합니다.`)) return;
         try {
           delBtn.disabled = true;
           delBtn.textContent = '삭제 중...';
           await removeGuestFromTeam(user.id);
-          await removeUserBookmarks(user.email);
-          showToast(`"${user.displayName}" 삭제 완료 (계정 삭제 + 즐겨찾기 삭제)`, 'success');
+          showToast(`"${user.displayName}" Guest 삭제 완료`, 'success');
 
           // 낙관적 UI 업데이트
           guests = guests.filter(g => g.id !== user.id);
