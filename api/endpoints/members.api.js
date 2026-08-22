@@ -74,7 +74,7 @@ export async function searchOrganizationUsers(query) {
     logger.warn('MembersAPI', 'Filter failed, trying $search');
     const searchSanitized = query.replace(/"/g, '\\"');
     const searchEndpoint = `/users?$search="displayName:${searchSanitized}" OR "mail:${searchSanitized}" OR "surname:${searchSanitized}" OR "givenName:${searchSanitized}" OR "mailNickname:${searchSanitized}"&$select=id,displayName,mail,userPrincipalName,userType,jobTitle,department&$top=15&$count=true`;
-    const response = await graphGet(searchEndpoint, { 'ConsistencyLevel': 'eventual' });
+    const response = await graphGet(searchEndpoint);
     return response.value
       .filter(u => u.userType !== 'Guest')
       .map(u => ({
