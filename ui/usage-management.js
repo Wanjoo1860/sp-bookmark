@@ -103,11 +103,19 @@ function render(stats) {
     delBtn.addEventListener('click', async () => {
       if (!confirm(`"${stat.email}"의 개인 북마크 ${stat.count}개를 모두 삭제하시겠습니까?`)) return;
       try {
-        await removeUserBookmarks(stat.email);
-        showToast(`"${stat.email}" 개인 북마크 삭제 완료`, 'success');
-        await initUsageManagement(); // 새로고침
+        delBtn.disabled = true;
+        delBtn.textContent = '삭제 중...';
+        const result = await removeUserBookmarks(stat.email);
+        if (result.failed > 0) {
+          showToast(`"${stat.email}" 북마크 ${result.deleted}개 삭제, ${result.failed}개 실패`, 'warning');
+        } else {
+          showToast(`"${stat.email}" 개인 북마크 ${result.deleted}개 삭제 완료`, 'success');
+        }
+        await initUsageManagement();
       } catch (error) {
         showToast('삭제 실패: ' + error.message, 'error');
+        delBtn.disabled = false;
+        delBtn.textContent = '일괄 삭제';
       }
     });
 
