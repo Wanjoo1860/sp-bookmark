@@ -151,6 +151,17 @@ export async function demoteFromAdmin(userId) {
 }
 
 /**
+ * 팀에서 멤버 제거
+ */
+export async function removeTeamMember(userId) {
+  logger.info('MembersAPI', `Removing member: ${userId}`);
+
+  // 그룹 멤버에서 제거
+  const endpoint = `/groups/${teamGroupId}/members/${userId}/$ref`;
+  await graphDelete(endpoint);
+}
+
+/**
  * 멤버 매핑 유틸
  */
 function mapToMember(user) {
@@ -161,3 +172,4 @@ function mapToMember(user) {
     userType: user.userType || 'Member'
   };
 }
+
