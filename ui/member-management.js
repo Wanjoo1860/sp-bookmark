@@ -1,7 +1,7 @@
 /**
  * 멤버 관리 모달 (탭 2 — Admin 전용)
  */
-import { fetchTeamOwners, fetchTeamMembers, fetchTeamGuests, searchOrganizationUsers, promoteToAdmin, demoteFromAdmin } from '../api/endpoints/members.api.js';
+import { fetchTeamOwners, fetchTeamMembers, fetchTeamGuests, searchOrganizationUsers, promoteToAdmin, demoteFromAdmin, removeTeamMember } from '../api/endpoints/members.api.js';
 import { inviteGuest, removeGuestFromTeam, validateGuestEmail } from '../api/endpoints/guests.api.js';
 import { removeUserBookmarks } from '../services/data-service.js';
 import { getAuthState } from '../auth/auth-guard.js'; 
@@ -27,6 +27,11 @@ export async function initMemberManagement() {
       fetchTeamMembers(),
       fetchTeamGuests()
     ]);
+
+    // ✅ 추가: members에서 owners와 중복되는 사용자 제거
+    const ownerIds = new Set(owners.map(o => o.id));
+    members = members.filter(m => !ownerIds.has(m.id));
+
     render();
   } catch (error) {
     logger.error('MemberMgmt', 'Init failed:', error);
@@ -268,20 +273,35 @@ function createMemberSection(title, list, type) {
       actions.appendChild(promoteBtn);
 
       // 멤버 개인 북마크 삭제
-      const delBmBtn = document.createElement('button');
-      delBmBtn.className = 'btn-user-del';
-      delBmBtn.textContent = '북마크 삭제';
-      delBmBtn.title = '이 사용자의 개인 북마크 일괄 삭제';
-      delBmBtn.addEventListener('click', async () => {
-        if (!confirm(`"${user.displayName}"의 개인 북마크를 모두 삭제하시겠습니까?\n(팀 멤버십은 유지됩니다)`)) return;
+            // 멤버 삭제 (팀에서 제외 + 개인 북마크 삭제)
+      const delMemberBtn = document.createElement('button');
+      delMemberBtn.className = 'btn-user-del';
+      delMemberBtn.textContent = '삭제';
+      delMemberBtn.title = '팀에서 제외 및 개인 즐겨찾기 삭제';
+      delMemberBtn.addEventListener('click', async () => {
+        if (!confirm(`"${user.displayName}"을(를) 삭제하시겠습니까?\n\n· Teams 팀 멤버에서 제외\n· 등록된 개인 즐겨찾기 삭제`)) return;
         try {
+          delMemberBtn.disabled = true;
+          delMemberBtn.textContent = '삭제 중...';
+          await removeTeamMember(user.id);
           await removeUserBookmarks(user.email);
-          showToast(`"${user.displayName}" 개인 북마크 삭제 완료`, 'success');
+          showToast(`"${user.displayName}" 삭제 완료 (팀 제외 + 즐겨찾기 삭제)`, 'success');
+
+          // 낙관적 UI 업데이트
+          members = members.filter(m => m.id !== user.id);
+          render();
+
+          // 백그라운드 동기화
+          setTimeout(async () => {
+            await initMemberManagement();
+          }, 3000);
         } catch (error) {
-          showToast('북마크 삭제 실패: ' + error.message, 'error');
+          showToast('삭제 실패: ' + error.message, 'error');
+          delMemberBtn.disabled = false;
+          delMemberBtn.textContent = '삭제';
         }
       });
-      actions.appendChild(delBmBtn);
+      actions.appendChild(delMemberBtn);
     }
 
     listEl.appendChild(item);
@@ -380,13 +400,13 @@ function createGuestSection() {
     delBtn.className = 'btn-user-del';
     delBtn.textContent = '삭제';
     delBtn.addEventListener('click', async () => {
-        if (!confirm(`"${user.displayName}"을(를) 삭제하시겠습니까?\n(팀에서 제거 + 개인 북마크 삭제)`)) return;
+        if (!confirm(`"${user.displayName}"을(를) 삭제하시겠습니까?\n\n· Guest 계정 삭제\n· 등록된 개인 즐겨찾기 삭제`)) return;
         try {
           delBtn.disabled = true;
           delBtn.textContent = '삭제 중...';
           await removeGuestFromTeam(user.id);
           await removeUserBookmarks(user.email);
-          showToast(`"${user.displayName}" 삭제 완료`, 'success');
+          showToast(`"${user.displayName}" 삭제 완료 (계정 삭제 + 즐겨찾기 삭제)`, 'success');
           await new Promise(resolve => setTimeout(resolve, 1500));
           await initMemberManagement();
         } catch (error) {
