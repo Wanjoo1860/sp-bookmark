@@ -147,8 +147,15 @@ function renderSearchResults(container, results) {
           promoteBtn.textContent = '추가 중...';
           await promoteToAdmin(user.id);
           showToast(`"${user.displayName}" 관리자로 추가 완료`, 'success');
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          await initMemberManagement();
+
+          // 낙관적 UI 업데이트
+          members = members.filter(m => m.id !== user.id);
+          owners.push({ id: user.id, displayName: user.displayName, email: user.email, userType: 'Member' });
+          render();
+
+          setTimeout(async () => {
+            await initMemberManagement();
+          }, 3000);
         } catch (error) {
           showToast('관리자 추가 실패: ' + error.message, 'error');
         }
@@ -166,8 +173,14 @@ function renderSearchResults(container, results) {
           const { addTeamMember } = await import('../api/endpoints/members.api.js');
           await addTeamMember(user.id);
           showToast(`"${user.displayName}" 멤버로 추가 완료`, 'success');
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          await initMemberManagement();
+
+          // 낙관적 UI 업데이트
+          members.push({ id: user.id, displayName: user.displayName, email: user.email, userType: 'Member' });
+          render();
+
+          setTimeout(async () => {
+            await initMemberManagement();
+          }, 3000);
         } catch (error) {
           showToast('멤버 추가 실패: ' + error.message, 'error');
         }
@@ -236,8 +249,16 @@ function createMemberSection(title, list, type) {
             demoteBtn.textContent = '강등 중...';
             await demoteFromAdmin(user.id);
             showToast(`"${user.displayName}" 멤버로 강등 완료`, 'success');
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            await initMemberManagement();
+
+            // 낙관적 UI 업데이트: 로컬 배열 즉시 수정
+            owners = owners.filter(o => o.id !== user.id);
+            members.push(user);
+            render();
+
+            // 백그라운드에서 서버 데이터 동기화
+            setTimeout(async () => {
+              await initMemberManagement();
+            }, 3000);
           } catch (error) {
             showToast('강등 실패: ' + error.message, 'error');
             demoteBtn.disabled = false;
@@ -260,11 +281,18 @@ function createMemberSection(title, list, type) {
           promoteBtn.textContent = '승격 중...';
           await promoteToAdmin(user.id);
           showToast(`"${user.displayName}" 관리자로 승격 완료`, 'success');
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          await initMemberManagement();
+
+          // 낙관적 UI 업데이트: 로컬 배열 즉시 수정
+          members = members.filter(m => m.id !== user.id);
+          owners.push(user);
+          render();
+
+          // 백그라운드에서 서버 데이터 동기화
+          setTimeout(async () => {
+            await initMemberManagement();
+          }, 3000);
         } catch (error) {
           showToast('승격 실패: ' + error.message, 'error');
-        } finally {
           promoteBtn.disabled = false;
           promoteBtn.textContent = '→ 관리자로 승격';
         }
