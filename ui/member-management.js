@@ -138,9 +138,12 @@ function renderSearchResults(container, results) {
       promoteBtn.addEventListener('click', async () => {
         if (!confirm(`"${user.displayName}"을(를) 관리자로 추가하시겠습니까?`)) return;
         try {
+          promoteBtn.disabled = true;
+          promoteBtn.textContent = '추가 중...';
           await promoteToAdmin(user.id);
           showToast(`"${user.displayName}" 관리자로 추가 완료`, 'success');
-          await initMemberManagement(); // 새로고침
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          await initMemberManagement();
         } catch (error) {
           showToast('관리자 추가 실패: ' + error.message, 'error');
         }
@@ -153,9 +156,12 @@ function renderSearchResults(container, results) {
       addMemberBtn.addEventListener('click', async () => {
         if (!confirm(`"${user.displayName}"을(를) 멤버로 추가하시겠습니까?`)) return;
         try {
+          addMemberBtn.disabled = true;
+          addMemberBtn.textContent = '추가 중...';
           const { addTeamMember } = await import('../api/endpoints/members.api.js');
           await addTeamMember(user.id);
           showToast(`"${user.displayName}" 멤버로 추가 완료`, 'success');
+          await new Promise(resolve => setTimeout(resolve, 1500));
           await initMemberManagement();
         } catch (error) {
           showToast('멤버 추가 실패: ' + error.message, 'error');
@@ -221,19 +227,21 @@ function createMemberSection(title, list, type) {
         demoteBtn.addEventListener('click', async () => {
           if (!confirm(`"${user.displayName}"을(를) 멤버로 강등하시겠습니까?`)) return;
           try {
+            demoteBtn.disabled = true;
+            demoteBtn.textContent = '강등 중...';
             await demoteFromAdmin(user.id);
             showToast(`"${user.displayName}" 멤버로 강등 완료`, 'success');
             await new Promise(resolve => setTimeout(resolve, 1500));
             await initMemberManagement();
           } catch (error) {
             showToast('강등 실패: ' + error.message, 'error');
+            demoteBtn.disabled = false;
+            demoteBtn.textContent = '→ 멤버로 강등';
           }
         });
         actions.appendChild(demoteBtn);
       }
     }
-
-
 
     if (type === 'member') {
       // 멤버 → 관리자 승격
@@ -243,13 +251,20 @@ function createMemberSection(title, list, type) {
       promoteBtn.addEventListener('click', async () => {
         if (!confirm(`"${user.displayName}"을(를) 관리자로 승격하시겠습니까?`)) return;
         try {
+          promoteBtn.disabled = true;
+          promoteBtn.textContent = '승격 중...';
           await promoteToAdmin(user.id);
           showToast(`"${user.displayName}" 관리자로 승격 완료`, 'success');
+          await new Promise(resolve => setTimeout(resolve, 1500));
           await initMemberManagement();
         } catch (error) {
           showToast('승격 실패: ' + error.message, 'error');
+        } finally {
+          promoteBtn.disabled = false;
+          promoteBtn.textContent = '→ 관리자로 승격';
         }
       });
+
       actions.appendChild(promoteBtn);
 
       // 멤버 개인 북마크 삭제
@@ -322,8 +337,10 @@ function createGuestSection() {
       emailInput.value = '';
       hint.textContent = '';
       const result = await inviteGuest(email);
-showToast(`"${email}" 초대 완료. 초대 메일이 발송되었습니다. (스팸 폴더도 확인해 주세요)`, 'success');
+      showToast(`"${email}" 초대 완료. 초대 메일이 발송되었습니다. (스팸 폴더도 확인해 주세요)`, 'success');
+      await new Promise(resolve => setTimeout(resolve, 1500));
       await initMemberManagement();
+
     } catch (error) {
       showToast('초대 실패: ' + error.message, 'error');
     } finally {
@@ -363,16 +380,22 @@ showToast(`"${email}" 초대 완료. 초대 메일이 발송되었습니다. (�
     delBtn.className = 'btn-user-del';
     delBtn.textContent = '삭제';
     delBtn.addEventListener('click', async () => {
-      if (!confirm(`"${user.displayName}"을(를) 삭제하시겠습니까?\n(팀에서 제거 + 개인 북마크 삭제)`)) return;
-      try {
-        await removeGuestFromTeam(user.id);
-        await removeUserBookmarks(user.email);
-        showToast(`"${user.displayName}" 삭제 완료`, 'success');
-        await initMemberManagement();
-      } catch (error) {
-        showToast('삭제 실패: ' + error.message, 'error');
-      }
-    });
+        if (!confirm(`"${user.displayName}"을(를) 삭제하시겠습니까?\n(팀에서 제거 + 개인 북마크 삭제)`)) return;
+        try {
+          delBtn.disabled = true;
+          delBtn.textContent = '삭제 중...';
+          await removeGuestFromTeam(user.id);
+          await removeUserBookmarks(user.email);
+          showToast(`"${user.displayName}" 삭제 완료`, 'success');
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          await initMemberManagement();
+        } catch (error) {
+          showToast('삭제 실패: ' + error.message, 'error');
+          delBtn.disabled = false;
+          delBtn.textContent = '삭제';
+        }
+      });
+
     actions.appendChild(delBtn);
 
     listEl.appendChild(item);
