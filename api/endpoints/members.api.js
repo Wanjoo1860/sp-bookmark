@@ -12,11 +12,9 @@ const teamGroupId = roleConfig.teamGroupId;
  */
 export async function fetchTeamOwners() {
   logger.info('MembersAPI', 'Fetching team owners');
-
   const response = await graphGet(
     `/groups/${teamGroupId}/owners?$select=id,displayName,mail,userPrincipalName,userType`
   );
-
   return response.value.map(mapToMember);
 }
 
@@ -25,14 +23,11 @@ export async function fetchTeamOwners() {
  */
 export async function fetchTeamMembers() {
   logger.info('MembersAPI', 'Fetching team members');
-
   const [membersRes, ownersRes] = await Promise.all([
     graphGet(`/groups/${teamGroupId}/members?$select=id,displayName,mail,userPrincipalName,userType`),
     graphGet(`/groups/${teamGroupId}/owners?$select=id`)
   ]);
-
   const ownerIds = new Set(ownersRes.value.map(o => o.id));
-
   return membersRes.value
     .filter(m => !ownerIds.has(m.id) && m.userType !== 'Guest')
     .map(mapToMember);
@@ -43,11 +38,9 @@ export async function fetchTeamMembers() {
  */
 export async function fetchTeamGuests() {
   logger.info('MembersAPI', 'Fetching team guests');
-
   const response = await graphGet(
     `/groups/${teamGroupId}/members?$select=id,displayName,mail,userPrincipalName,userType`
   );
-
   return response.value
     .filter(m => m.userType === 'Guest')
     .map(mapToMember);
@@ -61,12 +54,15 @@ export async function searchOrganizationUsers(query) {
 
   if (!query || query.length < 2) return [];
 
-  const endpoint = `/users?$filter=startswith(displayName,'${query}') or startswith(mail,'${query}')&$select=id,displayName,mail,userPrincipalName,userType,jobTitle,department&$top=10`;
+  // OData 특수문자 이스케이프
+  const sanitized = query.replace(/'/g, "''").replace(/[#&%+]/g, '');
+
+  const endpoint = `/users?$filter=startswith(displayName,'${sanitized}') or startswith(mail,'${sanitized}') or startswith(surname,'${sanitized}') or startswith(givenName,'${sanitized}') or startswith(mailNickname,'${sanitized}')&$select=id,displayName,mail,userPrincipalName,userType,jobTitle,department&$top=15`;
 
   try {
     const response = await graphGet(endpoint);
     return response.value
-      .filter(u => u.userType !== 'Guest') // 외부 Guest 제외
+      .filter(u => u.userType !== 'Guest')
       .map(u => ({
         id: u.id,
         displayName: u.displayName,
@@ -75,10 +71,10 @@ export async function searchOrganizationUsers(query) {
         department: u.department || ''
       }));
   } catch (error) {
-    // $filter 미지원 시 $search로 폴백
     logger.warn('MembersAPI', 'Filter failed, trying $search');
-    const searchEndpoint = `/users?$search="displayName:${query}" OR "mail:${query}"&$select=id,displayName,mail,userPrincipalName,userType,jobTitle,department&$top=10`;
-    const response = await graphGet(searchEndpoint);
+    const searchSanitized = query.replace(/"/g, '\\"');
+    const searchEndpoint = `/users?$search="displayName:${searchSanitized}" OR "mail:${searchSanitized}" OR "surname:${searchSanitized}" OR "givenName:${searchSanitized}" OR "mailNickname:${searchSanitized}"&$select=id,displayName,mail,userPrincipalName,userType,jobTitle,department&$top=15&$count=true`;
+    const response = await graphGet(searchEndpoint, { 'ConsistencyLevel': 'eventual' });
     return response.value
       .filter(u => u.userType !== 'Guest')
       .map(u => ({
@@ -96,12 +92,10 @@ export async function searchOrganizationUsers(query) {
  */
 export async function addTeamMember(userId) {
   logger.info('MembersAPI', `Adding member: ${userId}`);
-
   const endpoint = `/groups/${teamGroupId}/members/$ref`;
   const body = {
     '@odata.id': `https://graph.microsoft.com/v1.0/directoryObjects/${userId}`
   };
-
   await graphPost(endpoint, body);
 }
 
@@ -110,33 +104,23 @@ export async function addTeamMember(userId) {
  */
 export async function addTeamOwner(userId) {
   logger.info('MembersAPI', `Adding owner: ${userId}`);
-
   const endpoint = `/groups/${teamGroupId}/owners/$ref`;
   const body = {
     '@odata.id': `https://graph.microsoft.com/v1.0/directoryObjects/${userId}`
   };
-
   await graphPost(endpoint, body);
 }
 
 /**
  * 관리자로 승격 (멤버 → 소유자)
- * - 팀 미소속이면 멤버로 먼저 추가 후 소유자 부여
- * - 이미 멤버이면 소유자 권한만 부여
  */
 export async function promoteToAdmin(userId) {
   logger.info('MembersAPI', `Promoting to admin: ${userId}`);
-
-  // 이미 멤버인지 확인
   const members = await graphGet(`/groups/${teamGroupId}/members?$select=id`);
   const isMember = members.value.some(m => m.id === userId);
-
-  // 멤버가 아니면 먼저 추가
   if (!isMember) {
     await addTeamMember(userId);
   }
-
-  // 소유자로 추가
   await addTeamOwner(userId);
 }
 
@@ -145,7 +129,6 @@ export async function promoteToAdmin(userId) {
  */
 export async function demoteFromAdmin(userId) {
   logger.info('MembersAPI', `Demoting from admin: ${userId}`);
-
   const endpoint = `/groups/${teamGroupId}/owners/${userId}/$ref`;
   await graphDelete(endpoint);
 }
@@ -156,9 +139,24 @@ export async function demoteFromAdmin(userId) {
 export async function removeTeamMember(userId) {
   logger.info('MembersAPI', `Removing member: ${userId}`);
 
-  // 그룹 멤버에서 제거
-  const endpoint = `/groups/${teamGroupId}/members/${userId}/$ref`;
-  await graphDelete(endpoint);
+  try {
+    const membersRes = await graphGet(`/groups/${teamGroupId}/members?$select=id`);
+    const isMember = membersRes.value.some(m => m.id === userId);
+
+    if (!isMember) {
+      logger.warn('MembersAPI', `User ${userId} is not a group member, skipping removal`);
+      return;
+    }
+
+    const endpoint = `/groups/${teamGroupId}/members/${userId}/$ref`;
+    await graphDelete(endpoint);
+  } catch (error) {
+    if (error.status === 404 || error.message?.includes('does not exist')) {
+      logger.warn('MembersAPI', `Member ${userId} already removed or not found`);
+      return;
+    }
+    throw error;
+  }
 }
 
 /**
@@ -172,4 +170,3 @@ function mapToMember(user) {
     userType: user.userType || 'Member'
   };
 }
-
