@@ -7,10 +7,23 @@ let msalInstance = null;
 let currentAccount = null;
 
 /**
+ * 전역 msal 라이브러리 참조
+ */
+function getMsalLib() {
+  if (typeof msal !== 'undefined') return msal;
+  if (typeof window !== 'undefined' && window.msal) return window.msal;
+  throw new ReferenceError(
+    'MSAL 라이브러리가 로드되지 않았습니다. ' +
+    'index.html에서 msal-browser.min.js 스크립트가 올바르게 포함되어 있는지 확인하세요.'
+  );
+}
+
+/**
  * MSAL 초기화
  */
 export async function initializeMsal() {
-  msalInstance = new msal.PublicClientApplication(msalConfig);
+  const msalLib = getMsalLib();
+  msalInstance = new msalLib.PublicClientApplication(msalConfig);
   await msalInstance.initialize();
 
   // 리디렉트 응답 처리
@@ -37,7 +50,6 @@ export async function login() {
     return currentAccount;
   } catch (error) {
     if (error.errorCode === 'popup_window_error' || error.errorCode === 'empty_window_error') {
-      // 팝업 차단 시 리디렉트로 폴백
       await msalInstance.loginRedirect(loginRequest);
     }
     throw error;
@@ -48,10 +60,21 @@ export async function login() {
  * 로그아웃
  */
 export async function logout() {
-  await msalInstance.logoutPopup({
-    account: currentAccount,
-    postLogoutRedirectUri: msalConfig.auth.postLogoutRedirectUri
-  });
+  try {
+    await msalInstance.logoutPopup({
+      account: currentAccount,
+      postLogoutRedirectUri: msalConfig.auth.postLogoutRedirectUri
+    });
+  } catch (error) {
+    if (error.errorCode === 'popup_window_error' || error.errorCode === 'empty_window_error') {
+      await msalInstance.logoutRedirect({
+        account: currentAccount,
+        postLogoutRedirectUri: msalConfig.auth.postLogoutRedirectUri
+      });
+    } else {
+      throw error;
+    }
+  }
   currentAccount = null;
 }
 
@@ -69,7 +92,8 @@ export async function acquireToken() {
     const response = await msalInstance.acquireTokenSilent(request);
     return response.accessToken;
   } catch (error) {
-    if (error instanceof msal.InteractionRequiredAuthError) {
+    const msalLib = getMsalLib();
+    if (error instanceof msalLib.InteractionRequiredAuthError) {
       const response = await msalInstance.acquireTokenPopup(request);
       return response.accessToken;
     }

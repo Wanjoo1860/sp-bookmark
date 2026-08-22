@@ -46,7 +46,14 @@ export async function checkAuth() {
   } catch (error) {
     console.error('[AuthGuard] checkAuth error:', error);
     authState = { isAuthenticated: false, account: null, role: null, email: null, displayName: null };
+
+    // MSAL 로드 실패인 경우 사용자에게 알림
+    if (error instanceof ReferenceError && error.message.includes('MSAL')) {
+      const loginErr = document.getElementById('loginError');
+      if (loginErr) loginErr.textContent = 'Microsoft 인증 모듈 로드에 실패했습니다. 페이지를 새로고침해 주세요.';
+    }
   }
+
 
   if (onAuthStateChange) onAuthStateChange(authState);
   return authState;
