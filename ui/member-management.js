@@ -153,9 +153,6 @@ function renderSearchResults(container, results) {
           owners.push({ id: user.id, displayName: user.displayName, email: user.email, userType: 'Member' });
           render();
 
-          setTimeout(async () => {
-            await initMemberManagement();
-          }, 3000);
         } catch (error) {
           showToast('관리자 추가 실패: ' + error.message, 'error');
         }
@@ -178,9 +175,6 @@ function renderSearchResults(container, results) {
           members.push({ id: user.id, displayName: user.displayName, email: user.email, userType: 'Member' });
           render();
 
-          setTimeout(async () => {
-            await initMemberManagement();
-          }, 3000);
         } catch (error) {
           showToast('멤버 추가 실패: ' + error.message, 'error');
         }
@@ -255,10 +249,6 @@ function createMemberSection(title, list, type) {
             members.push(user);
             render();
 
-            // 백그라운드에서 서버 데이터 동기화
-            setTimeout(async () => {
-              await initMemberManagement();
-            }, 3000);
           } catch (error) {
             showToast('강등 실패: ' + error.message, 'error');
             demoteBtn.disabled = false;
@@ -287,10 +277,7 @@ function createMemberSection(title, list, type) {
           owners.push(user);
           render();
 
-          // 백그라운드에서 서버 데이터 동기화
-          setTimeout(async () => {
-            await initMemberManagement();
-          }, 3000);
+
         } catch (error) {
           showToast('승격 실패: ' + error.message, 'error');
           promoteBtn.disabled = false;
@@ -319,10 +306,6 @@ function createMemberSection(title, list, type) {
           members = members.filter(m => m.id !== user.id);
           render();
 
-          // 백그라운드 동기화
-          setTimeout(async () => {
-            await initMemberManagement();
-          }, 3000);
         } catch (error) {
           showToast('삭제 실패: ' + error.message, 'error');
           delMemberBtn.disabled = false;
@@ -427,7 +410,7 @@ function createGuestSection() {
     const delBtn = document.createElement('button');
     delBtn.className = 'btn-user-del';
     delBtn.textContent = '삭제';
-    delBtn.addEventListener('click', async () => {
+        delBtn.addEventListener('click', async () => {
         if (!confirm(`"${user.displayName}"을(를) 삭제하시겠습니까?\n\n· Guest 계정 삭제\n· 등록된 개인 즐겨찾기 삭제`)) return;
         try {
           delBtn.disabled = true;
@@ -435,8 +418,10 @@ function createGuestSection() {
           await removeGuestFromTeam(user.id);
           await removeUserBookmarks(user.email);
           showToast(`"${user.displayName}" 삭제 완료 (계정 삭제 + 즐겨찾기 삭제)`, 'success');
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          await initMemberManagement();
+
+          // 낙관적 UI 업데이트
+          guests = guests.filter(g => g.id !== user.id);
+          render();
         } catch (error) {
           showToast('삭제 실패: ' + error.message, 'error');
           delBtn.disabled = false;
