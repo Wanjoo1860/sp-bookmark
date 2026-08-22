@@ -265,7 +265,14 @@ setAuthStateListener(async function (state) {
 });
 
 /* ─── 초기화 ─── */
-(async function init() {
+async function init() {
   logger.info('Main', 'App initializing...');
   await checkAuth();
-})();
+}
+
+// DOM 및 동기 스크립트 완료 후 실행
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
