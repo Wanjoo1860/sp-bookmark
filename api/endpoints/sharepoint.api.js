@@ -91,13 +91,22 @@ export async function deleteBookmarksByOwner(ownerEmail) {
   logger.info('SharePointAPI', `Deleting all private bookmarks for: ${ownerEmail}`);
 
   const bookmarks = await fetchBookmarksByOwner(ownerEmail);
+  logger.info('SharePointAPI', `Found ${bookmarks.length} bookmarks for ${ownerEmail}`);
+
   const privateBookmarks = bookmarks.filter(b => b.visibility === 'private');
+  logger.info('SharePointAPI', `Found ${privateBookmarks.length} private bookmarks to delete`);
+
+  if (privateBookmarks.length === 0) {
+    logger.warn('SharePointAPI', `No private bookmarks found for ${ownerEmail}. All bookmarks:`, bookmarks.map(b => ({ id: b.id, visibility: b.visibility, owner: b.owner })));
+    return [];
+  }
 
   const results = [];
   for (const bm of privateBookmarks) {
     try {
       await deleteBookmark(bm.id);
       results.push({ id: bm.id, success: true });
+      logger.info('SharePointAPI', `Deleted bookmark ${bm.id}`);
     } catch (error) {
       logger.error('SharePointAPI', `Failed to delete bookmark ${bm.id}:`, error);
       results.push({ id: bm.id, success: false, error });
