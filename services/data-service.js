@@ -92,8 +92,10 @@ export async function editBookmark(itemId, updates) {
  * 북마크 삭제
  */
 export async function removeBookmark(itemId) {
+  if (!itemId) throw new Error('삭제할 항목의 ID가 없습니다.');
+
   const bookmarks = await getAllBookmarksUnfiltered();
-  const target = bookmarks.find(b => b.id === itemId);
+  const target = bookmarks.find(b => String(b.id) === String(itemId));  // ✅ 타입 안전 비교
 
   if (!target) throw new Error('북마크를 찾을 수 없습니다.');
   if (!canDeleteBookmark(target)) throw new Error('삭제 권한이 없습니다.');
@@ -101,6 +103,7 @@ export async function removeBookmark(itemId) {
   await deleteBookmark(itemId);
   cacheService.invalidate(CACHE_KEY);
 }
+
 
 /**
  * 사용자의 개인 북마크 일괄 삭제
