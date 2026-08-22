@@ -26,11 +26,11 @@ export async function fetchAllBookmarks() {
 export async function fetchBookmarksByOwner(ownerEmail) {
   logger.info('SharePointAPI', `Fetching bookmarks for: ${ownerEmail}`);
 
-  const endpoint = `${bookmarksListPath}/items?$expand=fields&$filter=fields/Owner eq '${ownerEmail}'&$orderby=fields/SortOrder asc`;
-  const response = await graphGet(endpoint);
-
-  return response.value.map(item => mapToBookmark(item));
+  // $filter 대신 전체 조회 후 클라이언트 필터링 (Owner 필드 인덱스 미지원 대응)
+  const allBookmarks = await fetchAllBookmarks();
+  return allBookmarks.filter(b => b.owner.toLowerCase() === ownerEmail.toLowerCase());
 }
+
 
 /**
  * 북마크 생성
